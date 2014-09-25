@@ -16,7 +16,7 @@ public class WebService extends Controller {
     @Inject
     private WSClient wsClient;
 
-    private static JsonNode callJsonApi(String url, long timeout) {
+    private static Promise<JsonNode> callJsonApi(String url) {
         return WS.url(url).get().map(
                 new Function<WSResponse, JsonNode>() {
                     public JsonNode apply(WSResponse wsResponse) {
@@ -24,18 +24,32 @@ public class WebService extends Controller {
                         return json;
                     }
                 }
-        ).get(timeout);
+        );
     }
 
-    public static Result search(String query) {
+    public static Promise<Result> search(String query) {
         try {
             String url = "https://www.googleapis.com/books/v1/volumes?q=" + query;
 
             // Call API
-            JsonNode jsonNode = callJsonApi(url, 10000);
-            return ok(jsonNode);
+            Promise<JsonNode> jsonNode = callJsonApi(url);
+            return jsonNode.map(
+                    new Function<JsonNode, Result>() {
+                        @Override
+                        public Result apply(JsonNode jsonNode) throws Throwable {
+                            return ok(jsonNode);
+                        }
+                    }
+            );
         } catch (Exception e) {
-            return internalServerError(e.getMessage());
+            return Promise.promise(
+                    new Function0<Result>() {
+                        @Override
+                        public Result apply() throws Throwable {
+                            return internalServerError();
+                        }
+                    }
+            );
         }
     }
 }
