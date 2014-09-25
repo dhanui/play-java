@@ -1,0 +1,19 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Application API
+GET     /                           controllers.Application.index()
+POST    /api/v1/instance            controllers.Application.register()
+
+# User API
+GET     /api/v1/users               controllers.User.index()
+POST    /api/v1/users/register      controllers.User.register()
+POST    /api/v1/users/login         controllers.User.login()
+POST    /api/v1/users/logout        controllers.User.logout()
+
+# Web Service API
+GET     /searchbook/:query          controllers.WebService.search(query: String)
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file               controllers.Assets.at(path="/public", file)
