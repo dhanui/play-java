@@ -15,5 +15,8 @@ POST    /api/v1/users/logout        controllers.User.logout()
 # Web Service API
 GET     /searchbook/:query          controllers.WebService.search(query)
 
+# Akka Test
+GET     /hello/:name                controllers.AkkaApp.sayHello(name)
+
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

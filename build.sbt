@@ -13,5 +13,6 @@ libraryDependencies ++= Seq(
   javaJpa.exclude("org.hibernate.javax.persistence", "hibernate-jpa-2.0-api"),
   "mysql" % "mysql-connector-java" % "5.1.18",
   "org.hibernate" % "hibernate-entitymanager" % "4.3.6.Final",
-  "javax.inject" % "javax.inject" % "1"
+  "javax.inject" % "javax.inject" % "1",
+  "com.typesafe.akka" %% "akka-actor" % "2.3.5"
 )
