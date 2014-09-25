@@ -13,7 +13,7 @@ POST    /api/v1/users/login         controllers.User.login()
 POST    /api/v1/users/logout        controllers.User.logout()
 
 # Web Service API
-GET     /searchbook/:query          controllers.WebService.search(query: String)
+GET     /searchbook/:query          controllers.WebService.search(query)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
