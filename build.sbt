@@ -14,5 +14,6 @@ libraryDependencies ++= Seq(
   "mysql" % "mysql-connector-java" % "5.1.18",
   "org.hibernate" % "hibernate-entitymanager" % "4.3.6.Final",
   "javax.inject" % "javax.inject" % "1",
-  "com.typesafe.akka" %% "akka-actor" % "2.3.5"
+  "com.typesafe.akka" %% "akka-actor" % "2.3.5",
+  "com.typesafe.akka" %% "akka-remote" % "2.3.5"
 )

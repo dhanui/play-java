@@ -1,16 +1,12 @@
 package controllers;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import application.actors.HelloActor;
+import akka.actor.ActorSelection;
 import application.actors.protocols.HelloActorProtocol;
 import play.libs.Akka;
 import play.libs.F.*;
 import play.mvc.Controller;
 import play.mvc.Result;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import settings.Global;
 
 import static akka.pattern.Patterns.ask;
 
@@ -20,7 +16,7 @@ import static akka.pattern.Patterns.ask;
 public class AkkaApp extends Controller {
 
     public static Promise<Result> sayHello(String name) {
-        ActorRef helloActor = Akka.system().actorOf(HelloActor.props);
+        ActorSelection helloActor = Global.actorSystem.actorSelection("user/hello");
         return Promise.wrap(ask(helloActor, new HelloActorProtocol.SayHello(name), 10000)).map(
                 new Function<Object, Result>() {
                     @Override
