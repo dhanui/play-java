@@ -1,82 +1,34 @@
 package controllers;
 
+import akka.actor.ActorRef;
+import akka.actor.Props;
+import application.actors.UserActor;
+import application.actors.protocols.UserProtocol;
+import application.exceptions.BadRequestException;
+import application.exceptions.NotFoundException;
+import application.exceptions.UnauthorizedException;
 import application.models.*;
 import application.services.Authorization;
+import application.services.UserService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.commons.lang3.RandomStringUtils;
+import play.libs.Akka;
+import play.libs.F;
 import play.libs.Json;
-import play.db.jpa.JPA;
 import play.db.jpa.Transactional;
 import play.mvc.*;
+import scala.concurrent.Future;
 
-import javax.persistence.NoResultException;
-import javax.persistence.NonUniqueResultException;
-import javax.persistence.TypedQuery;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import static akka.pattern.Patterns.ask;
 
 /**
  * Created by Danny on 9/25/2014.
  */
 public class User extends Controller {
-
-    private static GlobalUser registerUser(AppInstance appInstance, String email, String firstName, String lastName, Date dateOfBirth, String gender)
-    {
-        // Create new user
-        GlobalUser user = new GlobalUser();
-        user.setUuid(RandomStringUtils.randomAlphanumeric(50));
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
-        JPA.em().persist(user);
-
-        // Add user details
-        IcebergUser userDetail = new IcebergUser();
-        userDetail.setUser(user);
-        userDetail.setEmail(email);
-        userDetail.setDateOfBirth(dateOfBirth);
-        userDetail.setGender(gender);
-        JPA.em().persist(userDetail);
-
-        return user;
-    }
-
-    private static GlobalUser login(AppInstance appInstance, String email) {
-        IcebergUser userDetail;
-        TypedQuery<IcebergUser> query = JPA.em().createQuery("SELECT u from iceberg_user u " +
-                "WHERE u.email = :email", IcebergUser.class);
-        try {
-            query.setParameter("email", email);
-            userDetail = query.getSingleResult();
-        } catch (NoResultException | NonUniqueResultException e) {
-            return null;
-        }
-
-        // Link user with app instance
-        GlobalUser user = userDetail.getUser();
-        AppInstanceUser appInstanceUser = new AppInstanceUser();
-        appInstanceUser.setAppInstance(appInstance);
-        appInstanceUser.setUser(user);
-        JPA.em().persist(appInstanceUser);
-
-        return user;
-    }
-
-    private static boolean logout(AppInstance appInstance) {
-        AppInstanceUser appInstanceUser;
-        TypedQuery<AppInstanceUser> query = JPA.em().createQuery("SELECT aiu from app_instance_user aiu " +
-                "WHERE aiu.appInstance = :appInstance", AppInstanceUser.class);
-        try {
-            query.setParameter("appInstance", appInstance);
-            appInstanceUser = query.getSingleResult();
-        } catch (NoResultException | NonUniqueResultException e) {
-            return false;
-        }
-        JPA.em().remove(appInstanceUser);
-
-        return true;
-    }
 
     public static Result index() {
         return noContent();
@@ -102,7 +54,7 @@ public class User extends Controller {
                 Date dateOfBirth = new SimpleDateFormat("yyyy-MM-dd").parse(json.findPath("date_of_birth").textValue());
                 String gender = json.findPath("gender").textValue();
 
-                GlobalUser user = registerUser(appInstance, email, firstName, lastName, dateOfBirth, gender);
+                GlobalUser user = UserService.registerUser(appInstance, email, firstName, lastName, dateOfBirth, gender);
                 ObjectNode result = Json.newObject();
                 result.put("user_uuid", user.getUuid());
 
@@ -130,7 +82,7 @@ public class User extends Controller {
             } else {
                 // Fetch JSON data
                 String email = json.findPath("email").textValue();
-                GlobalUser user = login(appInstance, email);
+                GlobalUser user = UserService.login(appInstance, email);
                 if (user == null) {
                     return notFound();
                 } else {
@@ -145,6 +97,33 @@ public class User extends Controller {
         }
     }
 
+    public static F.Promise<Result> promiseLogin() {
+        ActorRef userActor = Akka.system().actorOf(Props.create(UserActor.class));
+        Future<Object> futureResult = ask(userActor, new UserProtocol.Login(request().getHeader("Authorization"),
+                request().body().asJson()), 3000);
+        System.out.println("Message sent to actor");
+        return F.Promise.wrap(futureResult)
+                .map((Object o) -> {
+                    // Error encountered
+                    if (o instanceof UnauthorizedException) {
+                        UnauthorizedException e = (UnauthorizedException) o;
+                        return unauthorized(e.getJsonMessage());
+                    } else if (o instanceof BadRequestException) {
+                        BadRequestException e = (BadRequestException) o;
+                        return badRequest(e.getJsonMessage());
+                    } else if (o instanceof NotFoundException) {
+                        NotFoundException e = (NotFoundException) o;
+                        return notFound(e.getJsonMessage());
+                    } else if (o instanceof Throwable) {
+                        Throwable e = (Throwable) o;
+                        return internalServerError(e.getMessage());
+                    }
+
+                    // Login successful
+                    return ok((ObjectNode) o);
+                });
+    }
+
     @Transactional
     public static Result logout() {
         try {
@@ -154,7 +133,7 @@ public class User extends Controller {
                 return unauthorized();
             }
 
-            if (logout(appInstance)) {
+            if (UserService.logout(appInstance)) {
                 return noContent();
             }
             else {
@@ -163,5 +142,27 @@ public class User extends Controller {
         } catch (Exception e) {
             return internalServerError(e.getMessage());
         }
+    }
+
+    public static F.Promise<Result> promiseLogout() {
+        ActorRef userActor = Akka.system().actorOf(Props.create(UserActor.class));
+        return F.Promise.wrap(ask(userActor, new UserProtocol.Logout(request().getHeader("Authorization")), 3000))
+                .map((Object o) -> {
+                    // Error encountered
+                    if (o instanceof UnauthorizedException) {
+                        UnauthorizedException e = (UnauthorizedException) o;
+                        return unauthorized(e.getJsonMessage());
+                    } else if (o instanceof Throwable) {
+                        Throwable e = (Throwable) o;
+                        return internalServerError(e.getMessage());
+                    }
+
+                    // No error encountered
+                    if ((boolean) o) {
+                        return noContent();
+                    } else {
+                        return notFound();
+                    }
+                });
     }
 }

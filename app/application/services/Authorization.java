@@ -3,6 +3,7 @@ package application.services;
 import application.models.App;
 import application.models.AppInstance;
 import play.db.jpa.JPA;
+import play.db.jpa.Transactional;
 
 import javax.persistence.NoResultException;
 import javax.persistence.NonUniqueResultException;

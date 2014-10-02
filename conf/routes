@@ -4,13 +4,16 @@
 
 # Application API
 GET     /                           controllers.Application.index()
-POST    /api/v1/instance            controllers.Application.register()
+# POST    /api/v1/instance            controllers.Application.register()
+POST    /api/v1/instance            controllers.Application.promiseRegister()
 
 # User API
 GET     /api/v1/users               controllers.User.index()
 POST    /api/v1/users/register      controllers.User.register()
-POST    /api/v1/users/login         controllers.User.login()
-POST    /api/v1/users/logout        controllers.User.logout()
+# POST    /api/v1/users/login         controllers.User.login()
+POST    /api/v1/users/login         controllers.User.promiseLogin()
+# POST    /api/v1/users/logout        controllers.User.logout()
+POST    /api/v1/users/logout        controllers.User.promiseLogout()
 
 # Web Service API
 GET     /searchbook/:query          controllers.WebService.search(query)

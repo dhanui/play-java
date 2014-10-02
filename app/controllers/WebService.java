@@ -13,18 +13,8 @@ import javax.inject.Inject;
  */
 public class WebService extends Controller {
 
-    @Inject
-    private WSClient wsClient;
-
     private static Promise<JsonNode> callJsonApi(String url) {
-        return WS.url(url).get().map(
-                new Function<WSResponse, JsonNode>() {
-                    public JsonNode apply(WSResponse wsResponse) {
-                        JsonNode json = wsResponse.asJson();
-                        return json;
-                    }
-                }
-        );
+        return WS.url(url).get().map((WSResponse response) -> response.asJson());
     }
 
     public static Promise<Result> search(String query) {
@@ -32,24 +22,9 @@ public class WebService extends Controller {
             String url = "https://www.googleapis.com/books/v1/volumes?q=" + query;
 
             // Call API
-            Promise<JsonNode> jsonNode = callJsonApi(url);
-            return jsonNode.map(
-                    new Function<JsonNode, Result>() {
-                        @Override
-                        public Result apply(JsonNode jsonNode) throws Throwable {
-                            return ok(jsonNode);
-                        }
-                    }
-            );
+            return callJsonApi(url).map((JsonNode jsonNode) -> ok(jsonNode));
         } catch (Exception e) {
-            return Promise.promise(
-                    new Function0<Result>() {
-                        @Override
-                        public Result apply() throws Throwable {
-                            return internalServerError();
-                        }
-                    }
-            );
+            return Promise.promise(() -> internalServerError(e.getMessage()));
         }
     }
 }

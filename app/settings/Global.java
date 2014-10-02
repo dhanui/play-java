@@ -6,7 +6,6 @@ import application.actors.HelloActor;
 import com.typesafe.config.ConfigFactory;
 import play.Application;
 import play.GlobalSettings;
-import play.libs.Akka;
 
 /**
  * Created by Danny on 9/30/2014.
