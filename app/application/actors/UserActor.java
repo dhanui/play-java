@@ -55,7 +55,7 @@ public class UserActor extends UntypedActor {
                 ObjectNode result = Json.newObject();
                 result.put("user_uuid", user.getUuid());
                 System.out.println("Operation successful");
-                
+
                 getSender().tell(result, getSelf());
             } catch (Throwable e) {
                 getSender().tell(e, getSelf());

@@ -1,8 +1,7 @@
 package controllers;
 
 import akka.actor.ActorSelection;
-import application.actors.protocols.HelloActorProtocol;
-import play.libs.Akka;
+import application.actors.protocols.HelloProtocol;
 import play.libs.F.*;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -17,7 +16,7 @@ public class AkkaApp extends Controller {
 
     public static Promise<Result> sayHello(String name) {
         ActorSelection helloActor = Global.actorSystem.actorSelection("user/hello");
-        return Promise.wrap(ask(helloActor, new HelloActorProtocol.SayHello(name), 10000)).map(
+        return Promise.wrap(ask(helloActor, new HelloProtocol.SayHello(name), 10000)).map(
                 new Function<Object, Result>() {
                     @Override
                     public Result apply(Object o) throws Throwable {

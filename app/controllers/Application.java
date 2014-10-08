@@ -76,14 +76,11 @@ public class Application extends Controller {
             return F.Promise.wrap(futureResult).map((Object o) -> {
                 // Error encountered
                 if (o instanceof UnauthorizedException) {
-                    Exception e = (UnauthorizedException)o;
-                    return unauthorized(e.getMessage());
+                    return unauthorized(((UnauthorizedException)o).getMessage());
                 } else if (o instanceof BadRequestException) {
-                    Exception e = (BadRequestException)o;
-                    return badRequest(e.getMessage());
+                    return badRequest(((BadRequestException)o).getMessage());
                 } else if (o instanceof Throwable) {
-                    Throwable e = (Throwable) o;
-                    return internalServerError(e.getMessage());
+                    return internalServerError(((Throwable) o).getMessage());
                 }
 
                 // No error encountered

@@ -102,21 +102,16 @@ public class User extends Controller {
         Future<Object> futureResult = ask(userActor, new UserProtocol.Login(request().getHeader("Authorization"),
                 request().body().asJson()), 3000);
         System.out.println("Message sent to actor");
-        return F.Promise.wrap(futureResult)
-                .map((Object o) -> {
+        return F.Promise.wrap(futureResult).map((Object o) -> {
                     // Error encountered
                     if (o instanceof UnauthorizedException) {
-                        UnauthorizedException e = (UnauthorizedException) o;
-                        return unauthorized(e.getJsonMessage());
+                        return unauthorized(((UnauthorizedException) o).getJsonMessage());
                     } else if (o instanceof BadRequestException) {
-                        BadRequestException e = (BadRequestException) o;
-                        return badRequest(e.getJsonMessage());
+                        return badRequest(((BadRequestException) o).getJsonMessage());
                     } else if (o instanceof NotFoundException) {
-                        NotFoundException e = (NotFoundException) o;
-                        return notFound(e.getJsonMessage());
+                        return notFound(((NotFoundException) o).getJsonMessage());
                     } else if (o instanceof Throwable) {
-                        Throwable e = (Throwable) o;
-                        return internalServerError(e.getMessage());
+                        return internalServerError(((Throwable) o).getMessage());
                     }
 
                     // Login successful
@@ -150,11 +145,9 @@ public class User extends Controller {
                 .map((Object o) -> {
                     // Error encountered
                     if (o instanceof UnauthorizedException) {
-                        UnauthorizedException e = (UnauthorizedException) o;
-                        return unauthorized(e.getJsonMessage());
+                        return unauthorized(((UnauthorizedException) o).getJsonMessage());
                     } else if (o instanceof Throwable) {
-                        Throwable e = (Throwable) o;
-                        return internalServerError(e.getMessage());
+                        return internalServerError(((Throwable) o).getMessage());
                     }
 
                     // No error encountered
